@@ -1,0 +1,7 @@
+# See below for configuration
+# https://www.redmine.org/projects/redmine/wiki/redmineinstall#Configuration
+#
+# default application settings:
+# http://svn.redmine.org/redmine/trunk/config/configuration.yml.example
+
+default:

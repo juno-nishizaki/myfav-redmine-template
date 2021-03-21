@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  redmine:
+    build:
+      context: ./redmine
+    restart: always
+    depends_on:
+      - db
+      - chupa-text
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Tokyo
+      REDMINE_DB_POSTGRES: db
+      REDMINE_DB_DATABASE: redminedb
+      REDMINE_DB_USERNAME: redmineuser
+      REDMINE_DB_PASSWORD: redminepassword
+      REDMINE_PLUGINS_MIGRATE: "true"
+    volumes:
+      - type: volume
+        source: bundle-data
+        target: /usr/local/bundle
+      - type: volume
+        source: redmine-files
+        target: /usr/src/redmine/files
+      - type: bind
+        source: /var/log/redmine
+        target: /usr/src/redmine/log
+
+  db:
+    build:
+      context: ./postgres
+    restart: always
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_DB: redminedb
+      POSTGRES_USER: redmineuser
+      POSTGRES_PASSWORD: redminepassword
+    volumes:
+      - type: volume
+        source: postgres-data
+        target: /var/lib/postgresql/data
+
+  chupa-text-proxy:
+    image: groonga/chupa-text:proxy
+    restart: always
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      - type: bind
+        source: /var/log/redmine-chupa-text/proxy
+        target: /var/log/squid
+
+  chupa-text:
+    image: groonga/chupa-text:ubuntu-latest
+    restart: always
+    depends_on:
+      - chupa-text-proxy
+    environment:
+      TZ: Asia/Tokyo
+      http_proxy: http://chupa-text-proxy:3128/
+      https_proxy: http://chupa-text-proxy:3128/
+      RAILS_SERVE_STATIC_FILES: "true"
+    volumes:
+      - type: bind
+        source: /var/log/redmine-chupa-text/http-server
+        target: /home/chupa-text/chupa-text-http-server/log
+
+volumes:
+  bundle-data:
+  redmine-files:
+  postgres-data:
